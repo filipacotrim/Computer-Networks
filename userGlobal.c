@@ -515,7 +515,6 @@ int listCommand(){
 		return 0;
 	}
 	sprintf(message, "ULS %s\n", active_gid);
-	puts("dentro do comando.");
 	return 1;
 }
 
