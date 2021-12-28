@@ -226,7 +226,9 @@ int readCommands(){
 		// U L I S T
 		else if((!strcmp(token_list[0], "ulist") || !strcmp(token_list[0], "ul") && num_tokens == 1)){
 			if(listCommand()){
+				puts("Antes do Send Message");
 				sendMessageTCP(message);
+				puts("depois do send Message");
 			}	
 			continue;	
 		}
@@ -515,6 +517,7 @@ int listCommand(){
 		printf("You must have a group selected to perform this action first.\n");
 		return 0;
 	}
+	puts("Antes de criar mensagem");
 	sprintf(message, "ULS %s\n", active_gid);
 	return 1;
 }
@@ -783,14 +786,15 @@ void sendMessageTCP(char *message){
 	if(nTCP == -1) exit(1);
 	
 
-
+	puts("Antes do read");
 	while(read(fdDSTCP, bufferTCP, 128) > 0){
 		strcat(toSend, bufferTCP);
 	}
+	puts("depois do read");
 	
 
 	char* token = strtok(toSend, "\n");
-	processResponseTCP(toSend);
+	processResponseTCP(token);
 	
 	freeaddrinfo(resDSTCP);
 	close(fdDSTCP);
