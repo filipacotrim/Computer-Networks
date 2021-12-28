@@ -588,6 +588,7 @@ void processResponseTCP(char *msg){
 	char* token_list1[MAX_TOKENS_RES]; 
 	char* token = strtok(msg, " \n");
 	
+	puts("Dentro do processResponse");
 	// KNOW THE TOKENS WRITTEN 
 	while (token != NULL && num_tokens < MAX_TOKENS_RES){
 		token_list1[num_tokens++] = token;
