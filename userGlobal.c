@@ -515,7 +515,6 @@ int listCommand(){
 		return 0;
 	}
 	sprintf(message, "ULS %s\n", active_gid);
-	puts("dentro do comando.");
 	return 1;
 }
 
@@ -761,7 +760,7 @@ void sendMessageUDP(char *message){
  * 	+ message to the server
 */
 void sendMessageTCP(char *message){
-	char bufferTCP[128];
+	char bufferTCP[128] = {0};
 	char toSend[128];
 
 	// inicializar TCP
@@ -783,9 +782,12 @@ void sendMessageTCP(char *message){
 	if(nTCP == -1) exit(1);
 	
 
+
 	while(read(fdDSTCP, bufferTCP, 128) > 0){
 		strcat(toSend, bufferTCP);
-	}	 
+	}
+	
+
 	char* token = strtok(toSend, "\n");
 	processResponseTCP(toSend);
 	
