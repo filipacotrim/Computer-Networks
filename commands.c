@@ -25,7 +25,7 @@ char active_gid[MAX_GID] = ""; // active group ID
 char gname[GNAME_SIZE] = ""; // group's name
 char text[Tsize] = ""; // text to send to server
 char Fname[] = ""; // file name to sent do server
-int mid = 0;
+int mid = 1;
 
 
 // FUNCTIONS
@@ -36,6 +36,7 @@ int logoutCommand(char *token_list[], int num_tokens);
 int subscribeCommand(char *token_list[], int num_tokens); // command subscribe
 int unsubscribeCommand(char *token_list[]); // unsubscribe command
 int showuidCommand(char *token_list[], int num_tokens); // showuid command
+int showgidCommand(); //showgid command
 int my_groupsCommand(); //my_gorups command
 int selectCommand(char *token_list[]); // select command
 int listCommand(); // list command
@@ -169,6 +170,8 @@ int logoutCommand(char *token_list[], int num_tokens){
 	sprintf(message, "OUT %s %s\n", uid, pass);
 	//delete current uid 
 	strcpy(uid,"");
+	strcpy(active_gid,"");
+	activeGid = DEACTIVATED;
 	session = LOGGED_OUT;
 	return 1;
 }
@@ -191,6 +194,26 @@ int showuidCommand(char *token_list[], int num_tokens){
 	return 1;
 }
 
+
+/**
+ * show's the id of the activated group
+ * 
+ * input:
+ *	 + list of parameters read in the input 
+ *	 + number of parameters read in the input
+ */
+int showgidCommand(){
+	if(session == LOGGED_OUT){
+		printf("You must login to perform this action first.\n");
+		return 0;
+	}
+	if(activeGid == DEACTIVATED) {
+		printf("You must have a selected group ro perform this action first.\n");
+		return 0;
+	}
+	printf("GID: %s\n", active_gid);
+	return 1;
+}
 
 
 /**
@@ -307,7 +330,6 @@ int listCommand(){
 		return 0;
 	}
 	sprintf(message, "ULS %s\n", active_gid);
-	//puts("dentro do comando.");
 	return 1;
 }
 
@@ -336,7 +358,11 @@ int postCommand(char *token_list[],int num_tokens) {
 		}
 		mid++;
 		strcpy(text,token_list[1]);
-		sprintf(message, "PST %s %s %ld %s", uid, active_gid, strlen(text), text);
+		char *temp2 = text + 1;
+		temp2[strlen(temp2)-1] = '\0';
+		size_t size = strlen(temp2);
+		printf("UID: %s, GID: %s, Tsize: %d, Text: %s\n",uid,active_gid,size,temp2);
+		sprintf(message, "PST %s %s %d %s", uid, active_gid, size, temp2);
 	}
 	else if (num_tokens == 3) {
 		if(!isValidText(token_list[1]) || !isValidFileName(token_list[2])) {

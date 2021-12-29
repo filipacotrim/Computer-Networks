@@ -113,8 +113,8 @@ void sendMessageUDP(char *msg){
  *  + message to the server
 */
 void sendMessageTCP(char *msg){
-  char bufferTCP[128];
-  char toSend[128];
+  char bufferTCP[128] = {0};
+  char *toSend = (char*) calloc(128,sizeof((char*)128 + 1));
 
   // inicializar TCP
   fdDSTCP = socket(AF_INET, SOCK_STREAM, 0); // TCP SOCKET
@@ -133,16 +133,18 @@ void sendMessageTCP(char *msg){
 
   nTCP = write(fdDSTCP, msg, strlen(msg));
   if(nTCP == -1) exit(1);
-  
+  //printf("msg : %s\n",msg);
 
   while(read(fdDSTCP, bufferTCP, 128) > 0){
-    strcat(toSend, bufferTCP);
-  }  
+      strcat(toSend,bufferTCP);
+  }
 
-  char* token = strtok(toSend, "\n"); 
+
+  char* token = strtok(toSend, "\n");
+  //printf("toSend: %s\n",toSend);
   processResponseTCP(token);
-  
   freeaddrinfo(resDSTCP);
+  free(toSend);
   close(fdDSTCP);
 }
 
