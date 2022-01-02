@@ -109,7 +109,7 @@ int readCommands(){
     // S H O W G I D
     else if((!strcmp(token_list[0],"showgid") || !strcmp(token_list[0],"sg")) && num_tokens == 1){
       //user application locally displays the GID of the selected group???
-      printf("GID of the selected group: %s\n", active_gid);
+      showgidCommand();
       continue;
     }
 

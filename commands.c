@@ -42,7 +42,6 @@ int selectCommand(char *token_list[]); // select command
 int listCommand(); // list command
 int postCommand(char *token_list[],int num_tokens); // select command
 int retrieveCommand(char *token_list[], int num_tokens); // retrieve command
-char readFromFile(char *Fname);
 
 
 /**
@@ -244,7 +243,8 @@ int subscribeCommand(char *token_list[], int num_tokens){
 		return 0;
 	}
 	strcpy(gname, token_list[2]);
-			
+	//
+
 	sprintf(message, "GSR %s %s %s\n", uid, gid, gname);
 	return 1;
 }
@@ -343,6 +343,7 @@ int listCommand(){
  *   + num_tokens
  */
 int postCommand(char *token_list[],int num_tokens) {
+	char fname[24];
 	if(session == LOGGED_OUT ){
 		printf("You must login to perform this action first.\n");
 		return 0;
@@ -351,27 +352,32 @@ int postCommand(char *token_list[],int num_tokens) {
 		printf("You must have a group selected to perform this action first.\n");
 		return 0;
 	}
-	if (num_tokens == 2) {
-		if (!isValidText(token_list[1])) {
-			printf("Invalid text\n");
-			return 0;
-		}
-		mid++;
-		strcpy(text,token_list[1]);
-		char *temp2 = text + 1;
-		temp2[strlen(temp2)-1] = '\0';
-		size_t size = strlen(temp2);
-		printf("UID: %s, GID: %s, Tsize: %d, Text: %s\n",uid,active_gid,size,temp2);
-		sprintf(message, "PST %s %s %d %s", uid, active_gid, size, temp2);
+	if (!isValidText(token_list[1])) {
+		printf("Invalid text\n");
+		return 0;
 	}
+
+	strcpy(text,token_list[1]);
+	//delete the "" from message
+	char *messageposted = text + 1;
+	messageposted[strlen(messageposted)-1] = '\0';
+	size_t size = strlen(messageposted);
+
+	if (num_tokens == 2) {
+		printf("UID: %s, GID: %s, Tsize: %ld, Text: %s\n",uid,active_gid,size,messageposted);
+		sprintf(message, "PST %s %s %ld %s\n", uid, active_gid, size, messageposted);
+	}
+
 	else if (num_tokens == 3) {
-		if(!isValidText(token_list[1]) || !isValidFileName(token_list[2])) {
+		strcpy(fname,token_list[2]);
+		//printf("token 2.2: %s\n",temp);
+		if(!isValidFileName(token_list[2])) {
 			printf("Invalid text or file name.\n");
 			return 0;
 		}
-		mid++;
-		strcpy(Fname,token_list[2]);
-		sprintf(message, "PST %s %s %ld %s %s %ld %c", uid, active_gid, strlen(text), text, Fname, sizeof(Fname), readFromFile(Fname));
+		
+		sprintf(message, "PST %s %s %ld %s %s %d %s\n", uid, active_gid, size, messageposted, fname, getFileSize(fname), readFromFile(fname));
+		printf("mensagem: %s",message);
 	}
 	return 1;
 	
@@ -402,7 +408,7 @@ int retrieveCommand(char *token_list[], int num_tokens){
 		return 0;
 	}
 	
-	sprintf(message, "RTV %s %s %s", uid, active_gid, token_list[1]);
+	sprintf(message, "RTV %s %s %s\n", uid, active_gid, token_list[1]);
 	return 1;
 }
 

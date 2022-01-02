@@ -114,8 +114,8 @@ void sendMessageUDP(char *msg){
 */
 void sendMessageTCP(char *msg){
   char bufferTCP[128] = {0};
-  char *toSend = (char*) calloc(128,sizeof((char*)128 + 1));
-
+  char *toSend = (char *) calloc(128,sizeof(char)*128 + 1);
+  
   // inicializar TCP
   fdDSTCP = socket(AF_INET, SOCK_STREAM, 0); // TCP SOCKET
   if(fdDSTCP == -1) exit(1);
@@ -135,14 +135,19 @@ void sendMessageTCP(char *msg){
   if(nTCP == -1) exit(1);
   //printf("msg : %s\n",msg);
 
-  while(read(fdDSTCP, bufferTCP, 128) > 0){
-      strcat(toSend,bufferTCP);
+  while(read(fdDSTCP, bufferTCP, 128)){
+    strcat(toSend,bufferTCP);
+    //printf("Buffando :%s\n",bufferTCP);
+    //memset para os casos onde, por exemplo, buffer ficava com o "rim" do meu nome
+    memset(bufferTCP,0,128);
   }
 
+  //mudei, pois ultima mensagem de todas não aparecia
+  toSend[strlen(toSend)+1] = '\0';
 
-  char* token = strtok(toSend, "\n");
   //printf("toSend: %s\n",toSend);
-  processResponseTCP(token);
+  //char* token = strtok(toSend, "\n");
+  processResponseTCP(toSend);
   freeaddrinfo(resDSTCP);
   free(toSend);
   close(fdDSTCP);
@@ -160,7 +165,8 @@ void sendMessageTCP(char *msg){
 void processResponseTCP(char *msg){
   int num_tokens = 0;
   int counter = 0;
-  char* token_list1[MAX_TOKENS_RES]; 
+  char* token_list1[MAX_TOKENS_RES] = {0}; 
+  //printf("mensagem: %s\n",msg);
   char* token = strtok(msg, " \n");
   
   // KNOW THE TOKENS WRITTEN 
@@ -168,27 +174,49 @@ void processResponseTCP(char *msg){
     token_list1[num_tokens++] = token;
     token = strtok(NULL, " \n");
     counter++;
+    //printf("token: %s\n",token);
   }
+
+
   
   if(!strcmp(token_list1[0], "RUL")){ // ULIST
     if(!strcmp(token_list1[1], "OK")){
-      printf("Users in group %s:\n", token_list1[2]);
-      for(int k = 3; k < counter; k++){
-        printf("UID: %s\n", token_list1[k]);
+      if(token_list1[3] == NULL) {
+        printf("This group has no subscribed users.\n");
+      }
+      else if(token_list1[3] != NULL){  
+        //printf("3: %s\n",token_list1[3]);
+        printf("Users in group %s:\n", token_list1[2]);
+        for(int k = 3; token_list1[k] != NULL; k++){
+          printf("UID: %s\n", token_list1[k]);
+        }
       }
     } else if(!strcmp(token_list1[1], "NOK"))
-      //group does not exist
-      printf("This group does not exist.\n");
-  }
-  else if(!strcmp(token_list1[0], "RTV")){
-    if(!strcmp(token_list1[1], "OK")) {
-      //printf("");
-    }
+        //group does not exist
+        printf("This group does not exist.\n");
   } else if(!strcmp(token_list1[0],"RPT")) { //POST
+      if(!strcmp(token_list1[1], "NOK"))
+        printf("Invalid text or file name.\n");
+      else {
+        printf("Successfully posted! MID: %s.\n",token_list1[1]);
+      }
+  } else if(!strcmp(token_list1[0],"RRT")) { //RETRIEVE
     if(!strcmp(token_list1[1], "OK")){
-      printf("Succesfully Posted.\n");
-  } else if(!strcmp(token_list1[1], "NOK"))
-      printf("Invalid text or file name.\n");
+      printf("You currently have %s unread messages :\n",token_list1[2]);
+      for(int i = 3; token_list1[i] != NULL;i+=4) {
+        if ((token_list1[i+4] == NULL) || strcmp(token_list1[i+4],"/")) {
+          printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s\n", token_list1[i], token_list1[i+1], token_list1[i+2], token_list1[i+3]);
+        }
+        else {
+          printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s/ Fname: %s/ Fsize: %s/ data: %s\n", token_list1[i], token_list1[i+1],
+           token_list1[i+2], token_list1[i+3],token_list1[i+5], token_list1[i+6], token_list1[i+7]);
+          i += 4;
+        }
+      }
+    } else if(!strcmp(token_list1[1], "EOF"))
+      printf("There are no messages available.\n");
+    else if(!strcmp(token_list1[1],"NOK"))
+      printf("There was a problem with the retrieve request.\n");
   }
 }
 

@@ -16,7 +16,9 @@ int isNumber(char* s); // checking if the str is a number
 void checkingInput(int argc, char *argv[]); // first input and define port and IP
 int isValidText(char *str); // checking if the text name is valid
 int isValidFileName(char *str); // checking if the text
-char readFromFile(char *Fname);
+char* readFromFile(char *Fname);
+int getFileSize(char *Fname);
+char buffer1[128] = {0};
 
 
 
@@ -157,12 +159,12 @@ int isValidFileName(char *str){
 }
 
 
-char readFromFile(char *Fname)
+char* readFromFile(char *Fname)
 {
     FILE *fptr;
     char c;
     // Open file
-    fptr = fopen(Fname, "r");
+    fptr = fopen(Fname, "r+");
     if (fptr == NULL)
     {
         printf("Cannot open file \n");
@@ -170,11 +172,35 @@ char readFromFile(char *Fname)
     }
     // Read contents from file
     c = fgetc(fptr);
+    int i = 0;
     while (c != EOF)
     {
-      printf ("%c", c);
+      buffer1[i] = c;
       c = fgetc(fptr);
+      i++;
     }
+    buffer1[i] = '\0';
+
+    printf("Buffer: %s\n",buffer1);
     fclose(fptr);
-    return c;
+    return buffer1;
+}
+
+int getFileSize(char *Fname) {
+    FILE *fptr;
+
+    // Open file
+    fptr = fopen(Fname, "r+");
+    if (fptr == NULL)
+    {
+        printf("Cannot open file \n");
+        exit(0);
+    }
+
+    fseek(fptr, 0L, SEEK_END);
+    int sz = ftell(fptr);
+    printf("Tamanho do ficheiro: %d\n", sz);
+
+    fclose(fptr);
+    return sz;
 }
