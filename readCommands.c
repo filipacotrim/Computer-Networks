@@ -10,6 +10,8 @@
 
 
 char buffer[BUFFER_SIZE]; // so para ler do terminal o comando
+char temp[BUFFER_SIZE]; // vetor temporario de copias
+char temp2[BUFFER_SIZE]; //vetor temporario de copias
 extern char message[BUFFER_SIZE]; // saber a mensagem que vamos enviar
 extern char active_gid[MAX_GID]; // grupo ativo 
 
@@ -25,15 +27,58 @@ int readCommands(){
     //read user's input
     printf("Enter a command: ");
     fgets(buffer, BUFFER_SIZE, stdin);
+
+    strcpy(temp,buffer);
     
     int num_tokens = 0;
     char* token_list[MAX_TOKENS_COMMAND]; 
     char* token = strtok(buffer, " \n");
-    
-    // KNOW THE TOKENS WRITTEN 
-    while (token != NULL && num_tokens < MAX_TOKENS_COMMAND){
+
+
+    if(!strcmp(token,"post")) {
       token_list[num_tokens++] = token;
+
+      //checks if message is between quotation marks
+      char *messageToPost;
+      //finds the firts quotation mark and if theres none then the text is invalid
+      messageToPost = strchr(temp, 34);
+      if (messageToPost == NULL) {
+        printf("Invalid text: message should be in between quotation marks\n");
+        continue;
+      }
+      //removes the quotation mark
+      messageToPost++;
+
+      //finds the last quotation mark and if theres none then the text is invalid
+      char *pos;
+      pos = strrchr(messageToPost, 34);
+
+      if (pos == NULL) {
+        printf("Invalid text: message should be in between quotation marks\n");
+        continue;
+      }
+
+      strcpy(temp2,strchr(messageToPost,34));
+
+      *pos='\0';                 
+      token_list[num_tokens++] = messageToPost;;
+
+      token = strtok(temp2," \n");
       token = strtok(NULL, " \n");
+      while (token != NULL && num_tokens < MAX_TOKENS_COMMAND){
+        token_list[num_tokens++] = token;
+        token = strtok(NULL, " \n");
+        
+      }
+    }
+
+    // KNOW THE TOKENS WRITTEN 
+    else {
+      while (token != NULL && num_tokens < MAX_TOKENS_COMMAND){
+        token_list[num_tokens++] = token;
+        token = strtok(NULL, " \n");
+        //printf("token: %s\n",token);
+      }
     } 
 
     
@@ -124,9 +169,9 @@ int readCommands(){
     // P O S T
     else if(!strcmp(token_list[0], "post") && (num_tokens == 2 || num_tokens == 3)){ // 3 tokens -> post "text" [FName] 
       if(postCommand(token_list, num_tokens)) {
-        sendMessageTCP(message);
+       sendMessageTCP(message);
       }
-      continue;
+     continue;
     }
 
 

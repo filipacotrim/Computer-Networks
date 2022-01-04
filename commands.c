@@ -352,20 +352,11 @@ int postCommand(char *token_list[],int num_tokens) {
 		printf("You must have a group selected to perform this action first.\n");
 		return 0;
 	}
-	if (!isValidText(token_list[1])) {
-		printf("Invalid text\n");
-		return 0;
-	}
-
-	strcpy(text,token_list[1]);
-	//delete the "" from message
-	char *messageposted = text + 1;
-	messageposted[strlen(messageposted)-1] = '\0';
-	size_t size = strlen(messageposted);
+	
 
 	if (num_tokens == 2) {
-		printf("UID: %s, GID: %s, Tsize: %ld, Text: %s\n",uid,active_gid,size,messageposted);
-		sprintf(message, "PST %s %s %ld %s\n", uid, active_gid, size, messageposted);
+		//printf("UID: %s, GID: %s, Tsize: %ld, Text: %s\n",uid,active_gid,strlen(token_list[1]),token_list[1]);
+		sprintf(message, "PST %s %s %ld %s\n", uid, active_gid,strlen(token_list[1]),token_list[1]);
 	}
 
 	else if (num_tokens == 3) {
@@ -375,9 +366,15 @@ int postCommand(char *token_list[],int num_tokens) {
 			printf("Invalid text or file name.\n");
 			return 0;
 		}
-		
-		sprintf(message, "PST %s %s %ld %s %s %d %s\n", uid, active_gid, size, messageposted, fname, getFileSize(fname), readFromFile(fname));
-		printf("mensagem: %s",message);
+
+		//isValidFileName etá a mexer com os tokens!!!
+		//cuidado com strlen de coisas q nao existem lmao
+
+
+		//printf("%ld\n",strlen(token_list[1]));
+		sprintf(message, "PST %s %s %ld %s %s %d %s\n", uid, active_gid, strlen(token_list[1]), token_list[1], 
+		fname, getFileSize(fname), readFromFile(fname));
+		//printf("%s\n",message);
 	}
 	return 1;
 	
@@ -409,6 +406,7 @@ int retrieveCommand(char *token_list[], int num_tokens){
 	}
 	
 	sprintf(message, "RTV %s %s %s\n", uid, active_gid, token_list[1]);
+	//printf("messagem %s\n",message);
 	return 1;
 }
 

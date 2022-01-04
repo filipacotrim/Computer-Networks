@@ -114,7 +114,7 @@ void sendMessageUDP(char *msg){
 */
 void sendMessageTCP(char *msg){
   char bufferTCP[128] = {0};
-  char *toSend = (char *) calloc(128,sizeof(char)*128 + 1);
+  char *toSend = (char *) calloc(10000000,sizeof(char));
   
   // inicializar TCP
   fdDSTCP = socket(AF_INET, SOCK_STREAM, 0); // TCP SOCKET
@@ -134,8 +134,9 @@ void sendMessageTCP(char *msg){
   nTCP = write(fdDSTCP, msg, strlen(msg));
   if(nTCP == -1) exit(1);
   //printf("msg : %s\n",msg);
+  int ret;
 
-  while(read(fdDSTCP, bufferTCP, 128)){
+  while((ret = read(fdDSTCP, bufferTCP, sizeof(bufferTCP)-1)) > 0){
     strcat(toSend,bufferTCP);
     //printf("Buffando :%s\n",bufferTCP);
     //memset para os casos onde, por exemplo, buffer ficava com o "rim" do meu nome
@@ -143,7 +144,7 @@ void sendMessageTCP(char *msg){
   }
 
   //mudei, pois ultima mensagem de todas não aparecia
-  toSend[strlen(toSend)+1] = '\0';
+  toSend[strlen(toSend)] = '\0';
 
   //printf("toSend: %s\n",toSend);
   //char* token = strtok(toSend, "\n");
@@ -168,13 +169,102 @@ void processResponseTCP(char *msg){
   char* token_list1[MAX_TOKENS_RES] = {0}; 
   //printf("mensagem: %s\n",msg);
   char* token = strtok(msg, " \n");
+  //printf("primeiro :%s\n",token);
+
+  if(!strcmp(token,"RRT")) {
+    // KNOW THE TOKENS WRITTEN && num_tokens < MAX_TOKENS_RES
+    while (token != NULL){
+
+      //char buf[240] = {0};
   
-  // KNOW THE TOKENS WRITTEN 
-  while (token != NULL && num_tokens < MAX_TOKENS_RES){
-    token_list1[num_tokens++] = token;
-    token = strtok(NULL, " \n");
-    counter++;
-    //printf("token: %s\n",token);
+      if(counter == 6) {
+   
+        int size = atoi(token_list1[num_tokens - 1]);
+        //printf("num: %d\n",num_tokens);
+   
+        int i = 0;
+        char buf[240] = {0};
+        //printf("size: %d\n",size);
+        while(i < (size-1)) {
+
+          //printf("tam token: %ld buff: %ld\n",strlen(token),strlen(buf));
+          strcat(buf,token);
+          i += strlen(token);
+
+          //servidor para files dá tamanho diferente (??)
+          //if (counter == 10) {
+           // i--;
+          //}
+
+          token = strtok(NULL, " \n");
+          if (token != NULL && strcmp(token, "/")) {
+            strcat(buf, " ");
+            i++;
+          }
+          //printf("token %s i %d\n",buf,i);
+          
+        }
+        token_list1[num_tokens] = malloc(sizeof(char)*strlen(buf)+1);
+        strcpy(token_list1[num_tokens++], buf);
+        //memset(buf,0,strlen(buf));
+
+        if (token != NULL && strcmp(token,"/")) {
+          counter = 3;
+        }
+        else {
+            counter++;
+        }
+      }
+      else if (counter == 10) {
+
+        int size = atoi(token_list1[num_tokens - 1]);
+        char fname[24];
+        strcpy(fname,token_list1[num_tokens-2]);
+
+        FILE *newPic = fopen(fname, "wb"); // criar o novo ficheiro
+
+        if(newPic == NULL){perror("magnus erro"); exit(1);} // em caso de erro
+
+        int i = 0;
+        //printf("size: %d\n",size);
+        while(i < (size-1)) {
+
+          i += strlen(token);
+          //printf("token: %s\n",token);
+          //printf("%d\n",i);
+          fwrite(token, 1, strlen(token), newPic); // escrever a data para o novo ficheiro
+
+
+          token = strtok(NULL, " \n");
+          if (token != NULL && strcmp(token, "/")) {
+            char *space = " ";
+            fwrite(space, 1, 1, newPic); // escrever a data para o novo ficheiro
+            i++;
+          }
+          //printf("token %s i %d\n",buf,i);
+          
+        }
+        counter = 3;
+        num_tokens++;
+        fclose(newPic);
+      }
+      else {
+    
+        token_list1[num_tokens++] = token;
+      
+        token = strtok(NULL, " \n");
+        counter++;
+      }
+    }
+  }
+  else {
+    // KNOW THE TOKENS WRITTEN 
+    while (token != NULL && num_tokens < MAX_TOKENS_RES){
+      token_list1[num_tokens++] = token;
+      token = strtok(NULL, " \n");
+      //counter++;
+      //printf("token: %s\n",token);
+    }
   }
 
 
@@ -198,7 +288,7 @@ void processResponseTCP(char *msg){
       if(!strcmp(token_list1[1], "NOK"))
         printf("Invalid text or file name.\n");
       else {
-        printf("Successfully posted! MID: %s.\n",token_list1[1]);
+        printf("Successfully posted!\n");
       }
   } else if(!strcmp(token_list1[0],"RRT")) { //RETRIEVE
     if(!strcmp(token_list1[1], "OK")){
@@ -208,8 +298,8 @@ void processResponseTCP(char *msg){
           printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s\n", token_list1[i], token_list1[i+1], token_list1[i+2], token_list1[i+3]);
         }
         else {
-          printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s/ Fname: %s/ Fsize: %s/ data: %s\n", token_list1[i], token_list1[i+1],
-           token_list1[i+2], token_list1[i+3],token_list1[i+5], token_list1[i+6], token_list1[i+7]);
+          printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s/ Fname: %s/ Fsize: %s\n", token_list1[i], token_list1[i+1],
+           token_list1[i+2], token_list1[i+3],token_list1[i+5], token_list1[i+6]);
           i += 4;
         }
       }

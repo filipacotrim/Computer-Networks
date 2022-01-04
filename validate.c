@@ -18,7 +18,7 @@ int isValidText(char *str); // checking if the text name is valid
 int isValidFileName(char *str); // checking if the text
 char* readFromFile(char *Fname);
 int getFileSize(char *Fname);
-char buffer1[128] = {0};
+//char buffer1[128] = {0};
 
 
 
@@ -151,7 +151,8 @@ int isValidFileName(char *str){
   token = strtok(NULL, " \n");
   token_list[num_tokens] = token;
   //printf("%s\n%s\n", token_list[0], token_list[1]);
-  if(isAlpha(token_list[0], 1) && strlen(token_list[0]) <= 24 
+  //MELHOR FAZER O CONTRARIO
+  if(token_list[1] != NULL && isAlpha(token_list[0], 1) && strlen(token_list[0]) <= 24 
     && strlen(token_list[1])==3 && isAlpha(token_list[1], 1)){
       return 1;
   }
@@ -162,35 +163,32 @@ int isValidFileName(char *str){
 char* readFromFile(char *Fname)
 {
     FILE *fptr;
-    char c;
+    
     // Open file
-    fptr = fopen(Fname, "r+");
+    fptr = fopen(Fname, "rb");
     if (fptr == NULL)
     {
         printf("Cannot open file \n");
         exit(0);
     }
-    // Read contents from file
-    c = fgetc(fptr);
-    int i = 0;
-    while (c != EOF)
-    {
-      buffer1[i] = c;
-      c = fgetc(fptr);
-      i++;
-    }
-    buffer1[i] = '\0';
 
-    printf("Buffer: %s\n",buffer1);
+    size_t fsize = getFileSize(Fname);
+    char * buffer1 = (char*)malloc(sizeof(char)*(fsize + 128));
+
+    fread(buffer1,fsize,1,fptr);
+    //printf("BUffer: %s\n",buffer1);
+
     fclose(fptr);
+    buffer1[fsize] = '\n';
     return buffer1;
+    free(buffer1);
 }
 
 int getFileSize(char *Fname) {
     FILE *fptr;
 
     // Open file
-    fptr = fopen(Fname, "r+");
+    fptr = fopen(Fname, "rb");
     if (fptr == NULL)
     {
         printf("Cannot open file \n");
@@ -199,7 +197,7 @@ int getFileSize(char *Fname) {
 
     fseek(fptr, 0L, SEEK_END);
     int sz = ftell(fptr);
-    printf("Tamanho do ficheiro: %d\n", sz);
+    //printf("Tamanho do ficheiro: %d\n", sz);
 
     fclose(fptr);
     return sz;
