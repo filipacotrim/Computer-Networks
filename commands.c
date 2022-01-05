@@ -17,7 +17,7 @@
 // VARIABLES
 char uid[UID_SIZE] = ""; // user's uid
 char pass[PASS_SIZE] = ""; // user's password
-char message[BUFFER_SIZE] = ""; // message to send to server
+char message[10000000] = ""; // message to send to server
 int session = LOGGED_OUT; // logged in or logged out
 int activeGid = DEACTIVATED; // active group ID
 char gid[MAX_GID] = ""; // group's ID
