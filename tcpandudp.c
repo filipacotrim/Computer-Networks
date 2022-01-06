@@ -138,13 +138,14 @@ void sendMessageTCP(char *msg){
   if(nTCP == -1) exit(1);
   //printf("msg : %s\n",msg);
   int n;
-
+  printf("Antes do while\n");
   while((n = read(fdDSTCP, bufferTCP, 128) > 0)){
     strncat(toSend,bufferTCP, 128);
     //printf("Buffando :%s\n",bufferTCP);
     //memset para os casos onde, por exemplo, buffer ficava com o "rim" do meu nome
     memset(bufferTCP,0,128);
   }
+  printf("Dpoes do while\n");
 
   //mudei, pois ultima mensagem de todas não aparecia
   
@@ -168,103 +169,113 @@ void sendMessageTCP(char *msg){
  */
 void processResponseTCP(char *msg){
   int num_tokens = 0;
-  int counter = 0;
   char* token_list1[MAX_TOKENS_RES] = {0};
   //memset(token_list1, 0, sizeof(token_list1)); 
   printf("mensagem: %s\n",msg);
-  char* token = strtok(msg, " \n");
+  
+  char* token = strtok("fake", " \n");
   //printf("primeiro :%s\n",token);
 
-  if(!strcmp(token,"RRT")) {
-    // KNOW THE TOKENS WRITTEN && num_tokens < MAX_TOKENS_RES
-    while (token != NULL){
+  int num_msgs, i=0;
+    char opcode[3] = {0};
+    char status[3] = {0};
+    char numMSG[3] = {0};
+    char mid[4] = "novo";
+    char uid[5] = {0};
+    char tsize[3] = {0};
+    char text[240] = {0};
+    char token_temp[240] = {0};
+    char slash[4] = {0};
+    sscanf(msg,"%s %[^\n]", opcode, msg);
+    printf("AQUI\n");
+    if(!strcmp(opcode, "RRT")){
+        sscanf(msg,"%s %[^\n]", status, msg);
+        if(!strcmp(status, "OK")){
+            sscanf(msg,"%s %[^\n]", numMSG, msg);
+            num_msgs = atoi(numMSG);
+            printf("You currently have %d unread messages :\n",num_msgs);
 
-      //char buf[240] = {0};
+            for(int j=1; j<=num_msgs;j++){
+                int textSize;
+
+                if(!strcmp(mid,"novo")){
+                    sscanf(msg,"%s %[^\n]", mid, msg);
+                }
+                    
+                printf("MID: %s", mid);
+                sscanf(msg,"%s %[^\n]", uid, msg);
+                printf(" UID: %s", uid);
+
+                sscanf(msg,"%s %[^\n]", tsize, msg);
+                printf(" Tsize: %s", tsize);
+                textSize = atoi(tsize);
+                
+                while(i<textSize){
+                    sscanf(msg,"%s %[^\n]", token_temp, msg);
+                    strncat(text, token_temp, strlen(token_temp));
+                    i += strlen(token_temp);
+                    memset(token_temp, 0, 240);
+                    
+                    if(i<textSize){
+                        strcat(text, " ");
+                        i++;
+                    }
+                } 
+                printf(" Text: %s", text);
+                
+                if(!strcmp(slash, text)){
+                  break;
+                }
   
-      if(counter == 6) {
-   
-        int size = atoi(token_list1[num_tokens - 1]);
-        //printf("num: %d\n",num_tokens);
-   
-        int i = 0;
-        char buf[240] = {0};
-        //printf("size: %d\n",size);
-        while(i < (size)) {
 
-          //printf("tam token: %ld buff: %ld\n",strlen(token),strlen(buf));
-          strcat(buf,token);
-          i += strlen(token);
-
-          //servidor para files dá tamanho diferente (??)
-          //if (counter == 10) {
-           // i--;
-          //}
-
-          token = strtok(NULL, " \n");
-          if (token != NULL && strcmp(token, "/")) {
-            strcat(buf, " ");
-            i++;
-          }
-          //printf("token %s i %d\n",buf,i);
-          
+                sscanf(msg, "%s %[^\n]", slash, msg);
+                
+                if(!strcmp(slash, "/")){
+                    char fname[24] = {0};
+                    char fsize[10] = {0};
+                    //token vai ter de ter o mm tamanho que o text
+                    char token_file[240] = {0};
+                    int fileSize, k=0;
+                    //abrir ficheiro para descobrir quanto temos de alocar
+                    sscanf(msg, "%s %[^\n]", fname, msg);
+                    printf(" Fname: %s", fname);
+                    sscanf(msg, "%s %[^\n]", fsize, msg);
+                    fileSize = atoi(fsize);
+                    
+                    FILE *newPic = fopen(fname, "wb"); // criar o novo ficheiro
+                    if(newPic == NULL){
+                        perror("Cannot open file."); 
+                        exit(1);
+                    } // em caso de erro
+                    
+                    printf(" Fsize: %d\n", fileSize);
+                    while(k<fileSize){
+                        sscanf(msg,"%s %[^\n]", token_file, msg);
+                        printf("%s\n", token_file);
+                        fwrite(token_file, 1, strlen(token_file), newPic); // escrever a data para o novo ficheiro
+                        k += strlen(token_file);
+                        memset(token_file, 0, 240);
+                        if(k<fileSize){
+                            fwrite(" ", 1, 1, newPic);
+                            k++;
+                        }
+                    }
+                    fclose(newPic);
+                    k = 0;
+                } else{
+                    strcpy(mid, slash);
+                }
+            i = 0;
+            printf("\n");
+            memset(text, 0, 240);
+            } 
+        } else if(!strcmp(status,"NOK")){
+            printf("There was a problem with the retrieve request.\n");
+        } else if(!strcmp(status, "EOF")){
+            printf("There are no messages available.\n");
         }
-        puts("Antes do malloc");
-        token_list1[num_tokens] = malloc(sizeof(char)*(strlen(buf)+1));
-        puts("Depois do malloc");
-
-        strcpy(token_list1[num_tokens++], buf);
-        //memset(buf,0,strlen(buf));
-        if (token != NULL && strcmp(token,"/")) {
-          counter = 3;
-        }
-        else {
-            counter++;
-        }
-      }
-      else if (counter == 10) {
-
-        int size = atoi(token_list1[num_tokens - 1]);
-        char fname[24];
-        strcpy(fname,token_list1[num_tokens-2]);
-
-        FILE *newPic = fopen(fname, "wb"); // criar o novo ficheiro
-
-        if(newPic == NULL){perror("magnus erro"); exit(1);} // em caso de erro
-
-        int i = 0;
-        //printf("size: %d\n",size);
-        while(i < (size-1)) {
-
-          i += strlen(token);
-          //printf("token: %s\n",token);
-          //printf("%d\n",i);
-          fwrite(token, 1, strlen(token), newPic); // escrever a data para o novo ficheiro
-
-
-          token = strtok(NULL, " \n");
-          if (token != NULL && strcmp(token, "/")) {
-            char *space = " ";
-            fwrite(space, 1, 1, newPic); // escrever a data para o novo ficheiro
-            i++;
-          }
-          //printf("token %s i %d\n",buf,i);
-          
-        }
-        counter = 3;
-        num_tokens++;
-        fclose(newPic);
-      }
-      else {
-    
-        token_list1[num_tokens++] = token;
-      
-        token = strtok(NULL, " \n");
-        printf("token: %s\n",token);
-
-        counter++;
-      }
     }
-  }
+    
   else {
     // KNOW THE TOKENS WRITTEN 
     while (token != NULL && num_tokens < MAX_TOKENS_RES){
@@ -274,8 +285,6 @@ void processResponseTCP(char *msg){
       printf("token: %s\n",token);
     }
   }
-
-
   
   if(!strcmp(token_list1[0], "RUL")){ // ULIST
     if(!strcmp(token_list1[1], "OK")){
@@ -298,28 +307,8 @@ void processResponseTCP(char *msg){
       else {
         printf("Successfully posted!\n");
       }
-  } else if(!strcmp(token_list1[0],"RRT")) { //RETRIEVE
-    if(!strcmp(token_list1[1], "OK")){
-      printf("You currently have %s unread messages :\n",token_list1[2]);
-      for(int i = 3; token_list1[i] != NULL;i+=4) {
-        if ((token_list1[i+4] == NULL) || strcmp(token_list1[i+4],"/")) {
-          printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s\n", token_list1[i], token_list1[i+1], token_list1[i+2], token_list1[i+3]);
-          //free(token_list1[i+3]);
-
-        }
-        else {
-          printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s/ Fname: %s/ Fsize: %s\n", token_list1[i], token_list1[i+1],
-           token_list1[i+2], token_list1[i+3],token_list1[i+5], token_list1[i+6]);
-          free(token_list1[i+3]);
-          free(token_list1[i+6]);
-          i += 4;
-        }
-      }
-    } else if(!strcmp(token_list1[1], "EOF"))
-      printf("There are no messages available.\n");
-    else if(!strcmp(token_list1[1],"NOK"))
-      printf("There was a problem with the retrieve request.\n");
   }
+  
 }
 
 

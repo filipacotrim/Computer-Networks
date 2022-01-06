@@ -384,15 +384,14 @@ int postCommand(char *token_list[],int num_tokens) {
 		char buff[180];
 		char * buffer1 = (char*)calloc(fsize+1,sizeof(char));
 		char * messageToPost = (char*)calloc(fsize+strlen(token_list[1])+240,sizeof(char));
-		int n;
 		while((strlen(buffer1)<=fsize)) {
 			//printf("%s",buffer1);
-			n = fread(buff,180,1,fptr);
+			fread(buff,180,1,fptr);
 			strncat(buffer1,buff,180);
 			//memset(buff,0,128);
 
 		}
-		buffer1[n] = '\n';
+		//buffer1[n] = '\n';
 		//printf("buff: %s\n",buffer1);
 		//printf("BUffer: %s\n",buffer1);
 		sprintf(messageToPost, "PST %s %s %ld %s %s %ld %s\n", uid, active_gid, strlen(token_list[1]), token_list[1], 
