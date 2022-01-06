@@ -148,8 +148,8 @@ void sendMessageTCP(char *msg){
 
   //mudei, pois ultima mensagem de todas não aparecia
   
-  printf("toSend: %s\n",toSend);
-  //toSend[n+1] = '\0';
+  //printf("toSend: %s\n",toSend);
+  toSend[strlen(toSend)] = '\0';
 
   processResponseTCP(toSend);
   freeaddrinfo(resDSTCP);
