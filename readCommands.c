@@ -168,10 +168,9 @@ int readCommands(){
 
     // P O S T
     else if(!strcmp(token_list[0], "post") && (num_tokens == 2 || num_tokens == 3)){ // 3 tokens -> post "text" [FName] 
-      if(postCommand(token_list, num_tokens)) {
-       sendMessageTCP(message);
-      }
-     continue;
+    if(!postCommand(token_list, num_tokens)) {
+      continue;
+    }
     }
 
 

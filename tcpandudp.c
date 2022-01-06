@@ -114,7 +114,8 @@ void sendMessageUDP(char *msg){
 */
 void sendMessageTCP(char *msg){
   char bufferTCP[128] = {0};
-  char *toSend = (char *) calloc(10000000,sizeof(char));
+  //printf("msg recebida: %s",msg);
+  char *toSend = (char *) calloc(sizeof(msg)+1,sizeof(char));
   
   // inicializar TCP
   fdDSTCP = socket(AF_INET, SOCK_STREAM, 0); // TCP SOCKET
@@ -134,9 +135,9 @@ void sendMessageTCP(char *msg){
   nTCP = write(fdDSTCP, msg, strlen(msg));
   if(nTCP == -1) exit(1);
   //printf("msg : %s\n",msg);
-  int ret;
+  int n;
 
-  while((ret = read(fdDSTCP, bufferTCP, sizeof(bufferTCP)-1)) > 0){
+  while((n = read(fdDSTCP, bufferTCP, 128) > 0)){
     strcat(toSend,bufferTCP);
     //printf("Buffando :%s\n",bufferTCP);
     //memset para os casos onde, por exemplo, buffer ficava com o "rim" do meu nome
@@ -144,10 +145,9 @@ void sendMessageTCP(char *msg){
   }
 
   //mudei, pois ultima mensagem de todas não aparecia
-  toSend[strlen(toSend)] = '\0';
+  printf("toSend: %s\n",toSend);
+  //toSend[n+1] = '\0';
 
-  //printf("toSend: %s\n",toSend);
-  //char* token = strtok(toSend, "\n");
   processResponseTCP(toSend);
   freeaddrinfo(resDSTCP);
   free(toSend);
@@ -167,7 +167,7 @@ void processResponseTCP(char *msg){
   int num_tokens = 0;
   int counter = 0;
   char* token_list1[MAX_TOKENS_RES] = {0}; 
-  //printf("mensagem: %s\n",msg);
+  printf("mensagem: %s\n",msg);
   char* token = strtok(msg, " \n");
   //printf("primeiro :%s\n",token);
 

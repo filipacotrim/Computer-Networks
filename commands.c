@@ -12,12 +12,14 @@
 #include "sharedMacros.h" // macros shared by the entire program
 #include "commands.h" // commands 
 #include "validate.h" // validate arguments
+#include "tcpandudp.h" // udp and tcp connections
+
 
 
 // VARIABLES
 char uid[UID_SIZE] = ""; // user's uid
 char pass[PASS_SIZE] = ""; // user's password
-char message[10000000] = ""; // message to send to server
+char message[BUFFER_SIZE] = ""; // message to send to server
 int session = LOGGED_OUT; // logged in or logged out
 int activeGid = DEACTIVATED; // active group ID
 char gid[MAX_GID] = ""; // group's ID
@@ -357,6 +359,7 @@ int postCommand(char *token_list[],int num_tokens) {
 	if (num_tokens == 2) {
 		//printf("UID: %s, GID: %s, Tsize: %ld, Text: %s\n",uid,active_gid,strlen(token_list[1]),token_list[1]);
 		sprintf(message, "PST %s %s %ld %s\n", uid, active_gid,strlen(token_list[1]),token_list[1]);
+		sendMessageTCP(message);
 	}
 
 	else if (num_tokens == 3) {
@@ -367,15 +370,40 @@ int postCommand(char *token_list[],int num_tokens) {
 			return 0;
 		}
 
-		//isValidFileName etá a mexer com os tokens!!!
-		//cuidado com strlen de coisas q nao existem lmao
+		FILE *fptr;
+    
+		// Open file
+		fptr = fopen(fname, "rb");
+		if (fptr == NULL)
+		{
+			printf("Cannot open file \n");
+			exit(0);
+		}
 
+		size_t fsize = getFileSize(fname);
+		char buff[180];
+		char * buffer1 = (char*)calloc(fsize+1,sizeof(char));
+		char * messageToPost = (char*)calloc(fsize+strlen(token_list[1])+240,sizeof(char));
+		int n;
+		while((strlen(buffer1)<=fsize)) {
+			//printf("%s",buffer1);
+			n = fread(buff,180,1,fptr);
+			strncat(buffer1,buff,180);
+			//memset(buff,0,128);
 
-		//printf("%ld\n",strlen(token_list[1]));
-		sprintf(message, "PST %s %s %ld %s %s %d %s\n", uid, active_gid, strlen(token_list[1]), token_list[1], 
-		fname, getFileSize(fname), readFromFile(fname));
-		//printf("%s\n",message);
-	}
+		}
+		buffer1[n] = '\n';
+		//printf("buff: %s\n",buffer1);
+		//printf("BUffer: %s\n",buffer1);
+		sprintf(messageToPost, "PST %s %s %ld %s %s %ld %s\n", uid, active_gid, strlen(token_list[1]), token_list[1], 
+		fname, fsize, buffer1);
+		printf("Buffer1: %ld  File Size: %ld\n", strlen(buffer1), fsize);
+		sendMessageTCP(messageToPost);
+
+		fclose(fptr);
+		free(buffer1);
+		free(messageToPost);
+	}	
 	return 1;
 	
 }
@@ -406,7 +434,7 @@ int retrieveCommand(char *token_list[], int num_tokens){
 	}
 	
 	sprintf(message, "RTV %s %s %s\n", uid, active_gid, token_list[1]);
-	//printf("messagem %s\n",message);
+	//printf("mensagem que enviamos %s\n",message);
 	return 1;
 }
 
