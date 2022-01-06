@@ -209,7 +209,7 @@ void processResponseTCP(char *msg){
           
         }
         puts("Antes do malloc");
-        token_list1[num_tokens] = (char*)malloc(sizeof(char)*(size));
+        token_list1[num_tokens] = malloc(sizeof(char)*(strlen(buf)+1));
         puts("Depois do malloc");
 
         strcpy(token_list1[num_tokens++], buf);
