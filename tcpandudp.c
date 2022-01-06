@@ -169,8 +169,8 @@ void sendMessageTCP(char *msg){
 void processResponseTCP(char *msg){
   int num_tokens = 0;
   int counter = 0;
-  char* token_list1[MAX_TOKENS_RES];
-  memset(token_list1, 0, sizeof(token_list1)); 
+  char* token_list1[MAX_TOKENS_RES] = {0};
+  //memset(token_list1, 0, sizeof(token_list1)); 
   printf("mensagem: %s\n",msg);
   char* token = strtok(msg, " \n");
   //printf("primeiro :%s\n",token);
@@ -259,6 +259,8 @@ void processResponseTCP(char *msg){
         token_list1[num_tokens++] = token;
       
         token = strtok(NULL, " \n");
+        printf("token: %s\n",token);
+
         counter++;
       }
     }
@@ -269,7 +271,7 @@ void processResponseTCP(char *msg){
       token_list1[num_tokens++] = token;
       token = strtok(NULL, " \n");
       //counter++;
-      //printf("token: %s\n",token);
+      printf("token: %s\n",token);
     }
   }
 
