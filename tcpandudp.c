@@ -169,7 +169,8 @@ void sendMessageTCP(char *msg){
 void processResponseTCP(char *msg){
   int num_tokens = 0;
   int counter = 0;
-  char* token_list1[MAX_TOKENS_RES] = {0}; 
+  char* token_list1[MAX_TOKENS_RES];
+  memset(token_list1, 0, sizeof(token_list1)); 
   printf("mensagem: %s\n",msg);
   char* token = strtok(msg, " \n");
   //printf("primeiro :%s\n",token);
@@ -207,13 +208,10 @@ void processResponseTCP(char *msg){
           //printf("token %s i %d\n",buf,i);
           
         }
-        printf("Antes do malloc no processResponseTCP\n");
         token_list1[num_tokens] = malloc(sizeof(char)*strlen(buf)+1);
-        printf("Depois do malloc no processResponseTCP\n");
 
         strcpy(token_list1[num_tokens++], buf);
         //memset(buf,0,strlen(buf));
-
         if (token != NULL && strcmp(token,"/")) {
           counter = 3;
         }
@@ -302,10 +300,14 @@ void processResponseTCP(char *msg){
       for(int i = 3; token_list1[i] != NULL;i+=4) {
         if ((token_list1[i+4] == NULL) || strcmp(token_list1[i+4],"/")) {
           printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s\n", token_list1[i], token_list1[i+1], token_list1[i+2], token_list1[i+3]);
+          //free(token_list1[i+3]);
+
         }
         else {
           printf("MID: %s/ UID: %s/ Tsize: %s/ text: %s/ Fname: %s/ Fsize: %s\n", token_list1[i], token_list1[i+1],
            token_list1[i+2], token_list1[i+3],token_list1[i+5], token_list1[i+6]);
+          free(token_list1[i+3]);
+          free(token_list1[i+6]);
           i += 4;
         }
       }
