@@ -208,7 +208,9 @@ void processResponseTCP(char *msg){
           //printf("token %s i %d\n",buf,i);
           
         }
+        puts("Antes do malloc");
         token_list1[num_tokens] = (char*)malloc(sizeof(char)*(size));
+        puts("Depois do malloc");
 
         strcpy(token_list1[num_tokens++], buf);
         //memset(buf,0,strlen(buf));
