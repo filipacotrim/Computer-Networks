@@ -114,9 +114,11 @@ void sendMessageUDP(char *msg){
 */
 void sendMessageTCP(char *msg){
   char bufferTCP[128] = {0};
+  puts("Entrei no sendMessageTCP");
   //printf("msg recebida: %s",msg);
-  char *toSend = (char *) calloc(sizeof(msg)+1,sizeof(char));
-  
+  char *toSend = (char *) calloc(strlen(msg)+1,sizeof(char));
+  printf("tamanho mensagem: %ld\n", strlen(msg));
+  printf("tamanho toSend: %ld\n", sizeof(toSend));
   // inicializar TCP
   fdDSTCP = socket(AF_INET, SOCK_STREAM, 0); // TCP SOCKET
   if(fdDSTCP == -1) exit(1);
@@ -138,13 +140,14 @@ void sendMessageTCP(char *msg){
   int n;
 
   while((n = read(fdDSTCP, bufferTCP, 128) > 0)){
-    strcat(toSend,bufferTCP);
+    strncat(toSend,bufferTCP, 128);
     //printf("Buffando :%s\n",bufferTCP);
     //memset para os casos onde, por exemplo, buffer ficava com o "rim" do meu nome
     memset(bufferTCP,0,128);
   }
 
   //mudei, pois ultima mensagem de todas não aparecia
+  
   printf("toSend: %s\n",toSend);
   //toSend[n+1] = '\0';
 
@@ -185,7 +188,7 @@ void processResponseTCP(char *msg){
         int i = 0;
         char buf[240] = {0};
         //printf("size: %d\n",size);
-        while(i < (size-1)) {
+        while(i < (size)) {
 
           //printf("tam token: %ld buff: %ld\n",strlen(token),strlen(buf));
           strcat(buf,token);
@@ -309,7 +312,6 @@ void processResponseTCP(char *msg){
       printf("There was a problem with the retrieve request.\n");
   }
 }
-
 
 
 

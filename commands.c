@@ -432,9 +432,12 @@ int retrieveCommand(char *token_list[], int num_tokens){
 		printf("Invalid MID\n");
 		return 0;
 	}
-	
-	sprintf(message, "RTV %s %s %s\n", uid, active_gid, token_list[1]);
-	//printf("mensagem que enviamos %s\n",message);
+	char * messageToPost = (char*)calloc(240,sizeof(char));
+	puts("depois de alocar");
+	sprintf(messageToPost, "RTV %s %s %s\n", uid, active_gid, token_list[1]);
+	puts("depois do sprintf");
+	sendMessageTCP(messageToPost);
+	free(messageToPost);
 	return 1;
 }
 

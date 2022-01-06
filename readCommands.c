@@ -176,8 +176,7 @@ int readCommands(){
 
     // R E T R I E V E
     else if((!strcmp(token_list[0], "retrieve") || !strcmp(token_list[0], "r")) && num_tokens == 2){
-      if(retrieveCommand(token_list, num_tokens))
-        sendMessageTCP(message);
+      if(!retrieveCommand(token_list, num_tokens))
       continue;
     }
 
