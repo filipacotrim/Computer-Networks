@@ -384,7 +384,7 @@ int postCommand(char *token_list[],int num_tokens) {
 		char buff[180];
 		char * buffer1 = (char*)calloc(fsize+1,sizeof(char));
 		char * messageToPost = (char*)calloc(fsize+strlen(token_list[1])+240,sizeof(char));
-		while((strlen(buffer1)<=fsize)) {
+		while((strlen(buffer1)<fsize)) {
 			//printf("%s",buffer1);
 			fread(buff,180,1,fptr);
 			strncat(buffer1,buff,180);
