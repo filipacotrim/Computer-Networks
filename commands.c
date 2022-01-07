@@ -24,7 +24,7 @@ int session = LOGGED_OUT; // logged in or logged out
 int activeGid = DEACTIVATED; // active group ID
 char gid[MAX_GID] = ""; // group's ID
 char active_gid[MAX_GID] = ""; // active group ID
-char gname[GNAME_SIZE] = ""; // group's name
+char activeGname[GNAME_SIZE] = ""; // group's name
 char text[Tsize] = ""; // text to send to server
 char Fname[] = ""; // file name to sent do server
 int mid = 1;
@@ -244,10 +244,10 @@ int subscribeCommand(char *token_list[], int num_tokens){
 		printf("Invalid GName: %s. Is limited to a total of 24 alphanumerical characters.\n", token_list[2]);
 		return 0;
 	}
-	strcpy(gname, token_list[2]);
+	strcpy(activeGname, token_list[2]);
 	//
 
-	sprintf(message, "GSR %s %s %s\n", uid, gid, gname);
+	sprintf(message, "GSR %s %s %s\n", uid, gid, activeGname);
 	return 1;
 }
 
@@ -432,9 +432,7 @@ int retrieveCommand(char *token_list[], int num_tokens){
 		return 0;
 	}
 	char * messageToPost = (char*)calloc(240,sizeof(char));
-	puts("depois de alocar");
 	sprintf(messageToPost, "RTV %s %s %s\n", uid, active_gid, token_list[1]);
-	puts("depois do sprintf");
 	sendMessageTCP(messageToPost);
 	free(messageToPost);
 	return 1;
