@@ -134,35 +134,35 @@ void sendMessageTCP(char *msg){
   if(nTCP == -1) exit(1);
 
   //ler o opcode + status
-  char header[7] = {0};
-  char op[3] = {0};
-  char status[3] = {0};
+  //char header[7] = {0};
+  char op[4] = {0};
+  char status[4] = {0};
   char mid[4] = {0};
   char uid[5] = {0};
   char tsize[3] = {0};
+  char fname[24] = {0};
+  char fsize[10] = {0};
   char text[240] = {0};
   char slash[2] = {0};
   char N[2] = {0} ;
   char c[1] = {0};
   char save[1] = {0};
   char toConcat[4] = {0};
-  read(fdDSTCP,header,7);
-  //printf("header: %s\n",header);
 
-  sscanf(header,"%s",op);
-  //printf("op: %s\n",op);
 
-  if(!strcmp(op,"RUL")) { //ULIST
-    sscanf(header,"%s %s",op,status);
-    //printf("status: %s\n",status);
-    //printf("here\n");
-    if(!strcmp(status,"OK")) {
-      //printf("here\n");
+  int g = read(fdDSTCP,op,4);
+  op[g] = '\0';
+  printf("op:%s.\n",op);
+
+  if(!strcmp(op,"RUL ")) { //ULIST
+    memset(op,0,4);
+    read(fdDSTCP,status,3);
+    printf("status: %s.\n",status);
+    if(!strcmp(status,"OK ")) {
       char gname[24] = {0};
       int count=0;
       memset(status,0,3);
-      memset(op,0,3);
-      memset(header,0,7);
+      read(fdDSTCP,c,1);
       while(count < 24) { 
         read(fdDSTCP,c,1);
         if(strcmp(c," ")) {
@@ -176,6 +176,7 @@ void sendMessageTCP(char *msg){
           break;
         }
       }
+      memset(gname,0,24);
       char uid[5] = {0};
       int n;
       int users = 0;
@@ -193,25 +194,31 @@ void sendMessageTCP(char *msg){
     }
   }
 
-  if (!strcmp(op,"RPT")){ //POST
-    sscanf(header,"%s %s",op,mid);
-    if(!strcmp(mid,"NOK")) {
+  if (!strcmp(op,"RPT ")){ //POST
+    printf("entra aqui\n");
+    memset(op,0,4);
+    read(fdDSTCP,status,3);
+    printf("status: %s.\n",status);
+    if(!strcmp(status,"NOK")) {
       printf("Post unsuccessful.\n");
     }
     else {
       printf("Successfully posted!\n");
     }
+    memset(status,0,3);
   }
 
-  if (!strcmp(op,"RRT")) { //RETRIEVE
-    //printf("OPCode: %s.\n",op);
-    sscanf(header,"%s %s",op,status);
+  if (!strcmp(op,"RRT ")) { //RETRIEVE
+    printf("OPCode: %s.\n",op);
+    //sscanf(header,"%s %s",op,status);
     
     //printf("Status: %s.\n",status);
 
-    memset(op,0,3);
+    memset(op,0,4);
+    read(fdDSTCP,status,3);
+
     //printf("Op: %s. Status: %s. \n",op,status);
-    if(!strcmp(status,"OK")) {
+    if(!strcmp(status,"OK ")) {
       memset(status,0,3);
       int flag = ALL_GOOD;
       read(fdDSTCP,N,2);
@@ -219,7 +226,7 @@ void sendMessageTCP(char *msg){
       //espaco depois do N
       read(fdDSTCP, c, 1);
       for (int i = 1; i <= numMsg; i++) {
-        
+        //printf("FLAG %d\n",flag);
         if(flag==ALL_GOOD){
           //printf("Entrei no All Good.\n");
           read(fdDSTCP,mid,5);
@@ -236,12 +243,14 @@ void sendMessageTCP(char *msg){
           memset(save, 0, 1);
           //read(fdDSTCP, c, 1);
         }
-        read(fdDSTCP,uid,6);
+        int m = read(fdDSTCP,uid,6);
+        uid[m] = '\0';
         printf("/UID: %s",uid);
         memset(uid,0,6);
         int count = 0;
-        while(count < 3) { 
+        while(count <= 3) { 
           read(fdDSTCP,c,1);
+          //printf("c: %s.\n",c);
           if(!strcmp(c," ")) {
             
             printf("/tsize: %s ",tsize);
@@ -257,7 +266,7 @@ void sendMessageTCP(char *msg){
         int k;
         k = read(fdDSTCP,text,size);
         text[k] = '\0';
-        printf("/text: %s \n",text);
+        printf("/text: %s ",text);
         //memset(text,0,size);
         read(fdDSTCP,c,1);  //espaco depois do text    
         read(fdDSTCP, slash, 1); //ler mais um para ver se tem o /
@@ -271,10 +280,72 @@ void sendMessageTCP(char *msg){
          */
         //printf("Slash: %s.\n", slash);
         if(!strcmp(slash, "/")){
+          flag = ALL_GOOD;
+          read(fdDSTCP,c,1); 
           //continuar a ler as cenas do ficheiro
+          FILE *newFile;
+          int count2 = 0;
+          while(count2 < 24) { 
+            read(fdDSTCP,c,1);
+            if(strcmp(c," ")) {
+              //printf("c: %s\n",c);
+              strcat(fname,c);
+              count2++;
+              //printf("here1\n");
+            }
+            else {
+              printf("/Fname %s :",fname);
+              break;
+            }
+          }
+          int count3 = 0;
+          while(count3 < 10) { 
+            read(fdDSTCP,c,1);
+            if(!strcmp(c," ")) {
+              
+              printf("/fsize: %s\n",fsize);
+              break;
+            }
+            else {
+              strcat(fsize,c);
+              count3++;
+            }
+          }
+
+          newFile = fopen(fname, "wb"); // criar o novo ficheiro
+          
+          if(newFile == NULL){perror("error"); exit(1);} // em caso de erro
+
+          char data[1024] = {0};
+          int Fsize = atoi(fsize);
+          int dim; 
+          int soma = 0;
+          while(Fsize > 1024) {
+            read(fdDSTCP,data,1024);
+            dim = fwrite(data, 1, 1024, newFile); // escrever a data para o novo ficheiro
+            memset(data,0,dim);
+            Fsize -= dim;
+            soma += dim;
+            //printf("Fsize: %d\n",Fsize);
+          }
+          //printf("Fsize: %d Dim: %d\n",Fsize,soma);
+          read(fdDSTCP,data,Fsize);
+          //sum += strlen(data);
+          //printf("sum: %ld\n",sum);
+          soma += fwrite(data, 1, Fsize, newFile); // escrever a data para o novo ficheiro
+          memset(data,0,Fsize);
+          //fwrite("\n",1,1,newFile);
+          fclose(newFile);
+          memset(fname,0,24);
+          memset(fsize,0,10);
+          read(fdDSTCP,c,1);
+          memset(c,0,1);
+          memset(slash,0,1);
+
         } else if(!strcmp(slash, "\n")){
-          continue; //ver se lemos um \n
+            continue; //ver se lemos um \n
         } else{
+          printf("\n");
           strcpy(save, slash);
           flag = DIDNT_READ_SLASH;
         }
