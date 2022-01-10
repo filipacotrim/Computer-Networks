@@ -100,7 +100,10 @@ void sendMessageUDP(char *msg){
   // receiving the message
   addrlenUDP = sizeof(addrDSUDP);
   nUDP = recvfrom(fdDSUDP, bufferUDP, 5000, 0, (struct sockaddr*)&addrDSUDP, &addrlenUDP);
-  if(nUDP == -1) exit(1);
+  if(nUDP == -1){
+    printf("Failed to send message.\n");
+    return;
+  } 
   bufferUDP[nUDP] = '\0';
   //printf("Buffer UDP: %s", bufferUDP);
   processResponseUDP(bufferUDP);
@@ -249,7 +252,7 @@ void sendMessageTCP(char *msg){
         uid[m] = '\0';
         printf("/UID: %s",uid);
         memset(uid,0, strlen(uid));
-	memset(c, 0, 1);
+	      memset(c, 0, 1);
         int count = 0;
         while(count <= 3) { 
           read(fdDSTCP,c,1);
@@ -262,7 +265,7 @@ void sendMessageTCP(char *msg){
           else {
             strncat(tsize,c,1);
             count++;
-	    memset(c, 0, 1);
+	          memset(c, 0, 1);
           }
         }
         int size = atoi(tsize);
@@ -273,7 +276,7 @@ void sendMessageTCP(char *msg){
         printf("/text: %s ",text);
         //memset(text,0,size);
         read(fdDSTCP,c,1);  //espaco depois do text
-	//printf("C: %s.\n", c);    
+	      //printf("C: %s.\n", c);    
         read(fdDSTCP, slash, 1); //ler mais um para ver se tem o /
         /**
          * 3 possibilidades:
@@ -286,9 +289,9 @@ void sendMessageTCP(char *msg){
         //printf("Slash: %s.\n", slash);
         if(!strcmp(slash, "/")){
           flag = ALL_GOOD;
-	  memset(c,0,1);
+	        memset(c,0,1);
           read(fdDSTCP,c,1);
-	  //printf("C: %s.\n",c);
+	        //printf("C: %s.\n",c);
           //continuar a ler as cenas do ficheiro
           FILE *newFile;
           int count2 = 0;
@@ -305,7 +308,7 @@ void sendMessageTCP(char *msg){
               break;
             }
           }
-	  //printf("FNAME: %s.", fname);
+	        //printf("FNAME: %s.", fname);
           int count3 = 0;
           while(count3 < 10) { 
             read(fdDSTCP,c,1);
@@ -323,7 +326,11 @@ void sendMessageTCP(char *msg){
 
           newFile = fopen(fname, "wb"); // criar o novo ficheiro
           
-          if(newFile == NULL){perror("error\n"); exit(1);} // em caso de erro
+          if(newFile == NULL){
+            perror("error");
+            printf("\n"); 
+            return;
+          } // em caso de erro
 
           char data[1024] = {0};
           int Fsize = atoi(fsize);
@@ -331,18 +338,18 @@ void sendMessageTCP(char *msg){
           int soma = 0;
          
           //do{
-             //int num = min(Fsize, sizeof(data));
-             //int offset = 0;
-             //dim = read(fdDSTCP, data, 1024);
-             //do{
-                //size_t written = fwrite(&data[offset], 1, num-offset, newFile);
-                //offset += written;
-             //} while(offset < num);
-             //memset(data, 0, dim);
-	     //soma += dim;
-	     //Fsize -= num;
-           //}while(Fsize > 0);
-	   //memset(data, 0, dim);
+            //int num = min(Fsize, sizeof(data));
+            //int offset = 0;
+            //dim = read(fdDSTCP, data, 1024);
+            //do{
+              //size_t written = fwrite(&data[offset], 1, num-offset, newFile);
+              //offset += written;
+            //} while(offset < num);
+            //memset(data, 0, dim);
+	          //soma += dim;
+	          //Fsize -= num;
+            //}while(Fsize > 0);
+	        //memset(data, 0, dim);
 
           while(Fsize > 1024) {
             dim = read(fdDSTCP,data,1024);
@@ -354,8 +361,8 @@ void sendMessageTCP(char *msg){
           }
           //printf("Fsize: %s Dim: %d\n",fsize,soma);
           dim = read(fdDSTCP,data,Fsize);
-	  soma += dim;
-	  printf("Fsize: %s Dim: %d\n", fsize, soma);
+	        soma += dim;
+	        printf("Fsize: %s Dim: %d\n", fsize, soma);
           //sum += strlen(data);
           //printf("sum: %d\n",soma);
           //soma += fwrite(data, 1, Fsize, newFile); // escrever a data para o novo ficheiro

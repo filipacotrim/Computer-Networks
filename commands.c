@@ -376,8 +376,8 @@ int postCommand(char *token_list[],int num_tokens) {
 		fptr = fopen(fname, "rb");
 		if (fptr == NULL)
 		{
-			printf("Cannot open file \n");
-			exit(0);
+			printf("Failed to open file.\n");
+			return 0;
 		}
 
 		size_t fsize = getFileSize(fname);

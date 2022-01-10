@@ -34,6 +34,10 @@ int readCommands(){
     char* token_list[MAX_TOKENS_COMMAND]; 
     char* token = strtok(buffer, " \n");
 
+    //if the user doenst enter any command
+    if(token == NULL){
+      continue;
+    }
 
     if(!strcmp(token,"post")) {
       token_list[num_tokens++] = token;
