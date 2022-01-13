@@ -368,37 +368,31 @@ int postCommand(char *token_list[],int num_tokens) {
 
 		size_t fsize = getFileSize(fname);
 		int SIZE = fsize;
-		printf("here\n");
 		char *data = (char*)calloc(1024,sizeof(char));
 		char *messageToPost = (char*)calloc(1024,sizeof(char));
 		int dim = 0;
 		int soma = 0;
 		sprintf(messageToPost, "PST %s %s %ld %s %s %ld ", uid, active_gid, strlen(token_list[1]), token_list[1], 
 		fname, fsize);
-		//socket = writeSocketTCP(messageToPost,socket);
-		writeSocketTCP(messageToPost,socket);
+		//writeSocketTCP(messageToPost,socket);
+		int str_size = strlen(messageToPost);
+		send(socket, messageToPost, str_size, 0);
 		
-		//sendMessageTCP(socket);
-		printf("escreveu\n");
 		free(messageToPost);
 
 		while(fsize > 1024) {
             dim = fread(data,sizeof(char),1024,fptr);
-            writeSocketTCP(data,socket);
+            send(socket, data, dim, 0);
             memset(data,0,dim);
             fsize -= dim;
             soma += dim;
             //printf("Fsize: %d\n",Fsize);
         }
-        //printf("Fsize: %s Dim: %d\n",fsize,soma);
         dim = fread(data,sizeof(char),fsize,fptr);
 		soma += dim;
-		//printf("data: %s\n",data);
-		//int socket = writeSocketTCP(data,socket);
-		writeSocketTCP(data,socket);
-
-
-		writeSocketTCP("\n",socket);
+		send(socket, data, dim, 0);
+		send(socket, "\n", 1, 0);
+		//writeSocketTCP("\n",socket);
 		printf("Fsize: %d Dim: %d\n", SIZE, soma);
 	
 		memset(data,0,fsize);

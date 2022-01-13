@@ -37,7 +37,7 @@ char ipDS[IP_SIZE]; // ip address to connect
 
 // external global variables
 extern int session; // logged in or not
-extern char gname[GNAME_SIZE]; // nome do grupo 
+extern char activeGname[GNAME_SIZE]; // nome do grupo 
 
 
 
@@ -133,13 +133,11 @@ int initializeTCP() {
 void writeSocketTCP(char *msg,int fdDSTCP) {
 
   //printf("msg : %s\n",msg);
-  nTCP = write(fdDSTCP, msg, strlen(msg));
+  nTCP = send(fdDSTCP, msg, strlen(msg),0);
   if(nTCP == -1) {
-    printf("aqui\n");
+    printf("Failed to send message\n");
     exit(1);
   }
-
-  //por a retornar socket
 }
 
 
@@ -158,8 +156,8 @@ void sendMessageTCP(int fdDSTCP){
   //char header[7] = {0};
   char op[4];
   char status[4];
-  char mid[4];
-  char uid[5];
+  char mid[5];
+  char uid[6];
   char tsize[3];
   char fname[24];
   char fsize[10];
@@ -169,27 +167,31 @@ void sendMessageTCP(int fdDSTCP){
   char c[1];
   char save[1];
   char toConcat[4];
+  int i;
 
 
   int g = read(fdDSTCP,op,4);
   op[g] = '\0';
-  printf("op:%s.\n",op);
+  //printf("op:%s.\n",op);
 
   if(!strcmp(op,"RUL ")) { //ULIST
     memset(op,0,4);
-    read(fdDSTCP,status,3);
-    printf("status: %s.\n",status);
+    int g = read(fdDSTCP,status,3);
+    status[g] = '\0';
+
     if(!strcmp(status,"OK ")) {
       char gname[24] = {0};
       int count=0;
       memset(status,0,3);
-      //read(fdDSTCP,c,1);
-      while(count < 24) { 
-        read(fdDSTCP,c,1);
+
+      while(count <= 24) { 
+        i = read(fdDSTCP,c,1);
         if(strcmp(c," ")) {
           //printf("c: %s\n",c);
+          c[i] = '\0';
           strcat(gname,c);
           count++;
+          memset(c,0,1);
           //printf("here1\n");
         }
         else {
@@ -197,8 +199,7 @@ void sendMessageTCP(int fdDSTCP){
           break;
         }
       }
-      memset(gname,0,24);
-      char uid[5] = {0};
+      //char uid[5] = {0};
       int n;
       int users = 0;
       while((n = read(fdDSTCP,uid,6)) > 0) {
@@ -206,8 +207,10 @@ void sendMessageTCP(int fdDSTCP){
         users = 1;
       }
       if (users == 0) {
-        printf("There are no users in this group.\n");
+        printf("There are no users in group %s.\n",gname);
       }
+
+      memset(gname,0,24);
 
     }
     if (!strcmp(status,"NOK")) {
@@ -216,10 +219,10 @@ void sendMessageTCP(int fdDSTCP){
   }
 
   if (!strcmp(op,"RPT ")){ //POST
-    printf("entra aqui\n");
+ 
     memset(op,0,4);
     read(fdDSTCP,status,3);
-    printf("status: %s.\n",status);
+
     if(!strcmp(status,"NOK")) {
       printf("Post unsuccessful.\n");
     }
@@ -230,33 +233,36 @@ void sendMessageTCP(int fdDSTCP){
   }
 
   if (!strcmp(op,"RRT ")) { //RETRIEVE
-    //printf("OPCode: %s.\n",op);
-    //sscanf(header,"%s %s",op,status);
-    
-    printf("Status: %s.\n",status);
 
     memset(op,0,4);
-    read(fdDSTCP,status,3);
+    int g = read(fdDSTCP,status,3);
+    status[g] = '\0';
 
-    printf("Status:%s.\n",status);
     if(!strncmp(status,"OK ", 3)) {
       memset(status,0,3);
       int flag = ALL_GOOD;
+
       read(fdDSTCP,N,2);
       int numMsg = atoi(N);
+      memset(N,0,2);
+
       if(numMsg==0){
         printf("There are no messages to retrieve.\n");
         return;
       }
       //espaco depois do N
       read(fdDSTCP, c, 1);
+      memset(c,0,1);
+
       for (int i = 1; i <= numMsg; i++) {
         //printf("FLAG %d\n",flag);
         if(flag==ALL_GOOD){
           //printf("Entrei no All Good.\n");
-          read(fdDSTCP,mid,5);
+          int g = read(fdDSTCP,mid,5);
+          mid[g] = '\0';
+
           printf("MID: %s",mid);
-          memset(mid,0,strlen(mid));
+          memset(mid,0,6);
         
         } else if(flag == DIDNT_READ_SLASH){
           //printf("Entrei no Didnt Read.\n");
@@ -264,15 +270,16 @@ void sendMessageTCP(int fdDSTCP){
           strcat(mid, save); //este strcat estraga o toConcat
           strncat(mid, toConcat, 4);
           printf("MID: %s",mid);
-          memset(mid,0,strlen(mid));
+          memset(mid,0,5);
           memset(save, 0, 1);
           //read(fdDSTCP, c, 1);
         }
         int m = read(fdDSTCP,uid,6);
         uid[m] = '\0';
+
         printf("/UID: %s",uid);
-        memset(uid,0, strlen(uid));
-	      memset(c, 0, 1);
+        memset(uid,0, 6);
+
         int count = 0;
         while(count <= 3) { 
           read(fdDSTCP,c,1);
@@ -288,14 +295,17 @@ void sendMessageTCP(int fdDSTCP){
 	          memset(c, 0, 1);
           }
         }
+
         int size = atoi(tsize);
         memset(tsize,0,3);
+
         int k;
         k = read(fdDSTCP,text,size);
         text[k] = '\0';
         printf("/text: %s ",text);
-        //memset(text,0,size);
+        memset(text,0,size);
         read(fdDSTCP,c,1);  //espaco depois do text
+        memset(c, 0, 1);
 	      //printf("C: %s.\n", c);    
         read(fdDSTCP, slash, 1); //ler mais um para ver se tem o /
         /**
@@ -307,19 +317,21 @@ void sendMessageTCP(int fdDSTCP){
          * 
          */
         //printf("Slash: %s.\n", slash);
-        if(!strcmp(slash, "/")){
+        if(!strncmp(slash, "/",1)){
           flag = ALL_GOOD;
-	        memset(c,0,1);
+	        //memset(c,0,1);
           read(fdDSTCP,c,1);
 	        //printf("C: %s.\n",c);
           //continuar a ler as cenas do ficheiro
           FILE *newFile;
           int count2 = 0;
+          memset(fname, 0, 24);
           while(count2 <= 24) { 
             read(fdDSTCP,c,1);
             if(strncmp(c," ",1)) {
               //printf("c: %s\n",c);
               strncat(fname,c,1);
+              memset(c, 0, 1);
               count2++;
               //printf("here1\n");
             }
@@ -340,46 +352,40 @@ void sendMessageTCP(int fdDSTCP){
             }
             else {
               strncat(fsize,c,1);
+              memset(c, 0, 1);
               count3++;
             }
           }
-
+          printf("%s\n", fname);
           newFile = fopen(fname, "wb"); // criar o novo ficheiro
-          
+
           if(newFile == NULL){
-            perror("error");
-            printf("\n"); 
+            printf("Erro ao criar ficheiro.\n"); 
             return;
           } // em caso de erro
-
           char data[512];
           int Fsize = atoi(fsize);
-          int dim; 
+          int dim = 0; 
           int soma = 0;
-         
 
-          while(Fsize > 512) {
+          while(Fsize >= 512) {
             dim = read(fdDSTCP,data,512);
-            fwrite(data, 1, 512, newFile); // escrever a data para o novo ficheiro
-            memset(data,0,dim);
+            fwrite(data, 1, dim, newFile); // escrever a data para o novo ficheiro
+            memset(data,0, 512);
             Fsize -= dim;
             soma += dim;
-            //printf("Fsize: %d\n",Fsize);
           }
-          //printf("Fsize: %s Dim: %d\n",fsize,soma);
           dim = read(fdDSTCP,data,Fsize);
 	        soma += dim;
-	        printf("Fsize: %s Dim: %d\n", fsize, soma);
           fwrite(data, 1, Fsize, newFile);
+	        printf("Fsize: %s Dim: %d\n", fsize, soma);
           memset(data,0,Fsize);
-          //fwrite("\n",1,1,newFile);
           fclose(newFile);
-          memset(fname,0,24);
           memset(fsize,0,10);
+          memset(fname,0,24);
+          memset(slash,0,1);
           read(fdDSTCP,c,1);
           memset(c,0,1);
-          memset(slash,0,1);
-
         } else if(!strcmp(slash, "\n")){
             continue; //ver se lemos um \n
         } else{
@@ -401,7 +407,6 @@ void sendMessageTCP(int fdDSTCP){
 
   close(fdDSTCP);
 }
-
 
 
 /**
@@ -478,10 +483,10 @@ void processResponseUDP(char *msg){
     sscanf(msg,"%s %[^\n]", status, msg);
     if(!strcmp(status, "OK"))
       //ok  
-      printf("Successfully subscribed to group %s.\n", gname);
+      printf("Successfully subscribed to group %s.\n", activeGname);
     else if(!strcmp(status, "NEW"))
       //create new group
-      printf("Successfully created and subscribed group %s.\n", gname);
+      printf("Successfully created and subscribed group %s.\n", activeGname);
     else if(!strcmp(status, "E_USR"))
       //invalid UID
       printf("Invalid user ID.\n");
